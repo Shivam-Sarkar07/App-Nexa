@@ -49,6 +49,7 @@ export class ErrorBoundary extends Component<Props, State> {
       );
     }
 
-    return this.props.children;
+    // Explicitly casting this to any to avoid "Property 'props' does not exist" type error
+    return (this as any).props.children;
   }
 }

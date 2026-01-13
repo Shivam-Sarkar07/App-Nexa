@@ -21,7 +21,7 @@ export const PremiumUpgrade: React.FC<PremiumUpgradeProps> = ({ onBack, onUpgrad
   const handleUpgradeClick = () => {
     setIsProcessing(true);
 
-    if (!window.Razorpay) {
+    if (!(window as any).Razorpay) {
       alert("Razorpay SDK failed to load. Please check your internet connection.");
       setIsProcessing(false);
       return;
