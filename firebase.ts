@@ -4,10 +4,14 @@ import { getFirestore } from 'firebase/firestore';
 import { getAnalytics } from "firebase/analytics";
 
 // ------------------------------------------------------------------
-// FIREBASE CONFIGURATION (PRODUCTION)
+// FIREBASE CONFIGURATION
+// IMPORTANT: Replace the values below with your own Firebase Project configuration.
+// If you do not have your own project, the app will run in "Demo Mode" with mock data,
+// but authentication and cloud features will likely fail.
 // ------------------------------------------------------------------
 
 const firebaseConfig = {
+  // TODO: Replace with your actual Firebase config keys
   apiKey: "AIzaSyAuxngWCstIiQ_u1wOG67CrLeVYMwTNv3g",
   authDomain: "app-nexa.firebaseapp.com",
   projectId: "app-nexa",

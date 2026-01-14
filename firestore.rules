@@ -1,0 +1,44 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Helper functions
+    function isSignedIn() {
+      return request.auth != null;
+    }
+    
+    function isOwner(userId) {
+      return request.auth.uid == userId;
+    }
+
+    // Apps collection: Public read, Admin write (mock admin for now)
+    match /apps/{appId} {
+      allow read: if true;
+      allow write: if false; // Only manageable via console for now
+    }
+
+    // Users collection: Users can read/write their own data
+    match /users/{userId} {
+      allow read, write: if isSignedIn() && isOwner(userId);
+    }
+
+    // Bug Reports: Authenticated users can create
+    match /bug_reports/{reportId} {
+      allow create: if isSignedIn();
+      allow read: if false; // Private to admins
+      allow update, delete: if false;
+    }
+
+    // Gift Codes: Authenticated users can read active codes (query)
+    match /gift_codes/{codeId} {
+      allow read: if isSignedIn();
+      allow update: if isSignedIn(); // Needs strictly controlled transaction in real app, simplified here
+    }
+
+    // Points Logs: Authenticated users can create logs for themselves
+    match /points_logs/{logId} {
+      allow create: if isSignedIn() && request.resource.data.userId == request.auth.uid;
+      allow read: if isSignedIn() && resource.data.userId == request.auth.uid;
+    }
+  }
+}

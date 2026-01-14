@@ -18,6 +18,7 @@ import { AppView, AppItem } from './types';
 import { useAuth } from './context/AuthContext';
 import { auth, db, signOut } from './firebase';
 import { collection, query, where, onSnapshot, doc, getDoc, setDoc, updateDoc, serverTimestamp, arrayUnion, arrayRemove } from 'firebase/firestore';
+import { MOCK_APPS } from './constants';
 
 const AppContent: React.FC = () => {
   const { user, loading: authLoading } = useAuth();
@@ -35,7 +36,9 @@ const AppContent: React.FC = () => {
       const items = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as AppItem[];
       setApps(items);
     }, (error) => {
-      console.error("Error fetching apps:", error);
+      console.warn("Firestore access denied or not configured. Switching to Demo Mode.", error);
+      // Fallback to mock data so the app is usable without backend setup
+      setApps(MOCK_APPS);
     });
     return () => unsubscribe();
   }, []);
@@ -67,6 +70,7 @@ const AppContent: React.FC = () => {
         }
       } catch (err) {
         console.error("Error syncing user:", err);
+        // Silent fail for demo purposes
       }
     };
     syncUser();
@@ -75,6 +79,8 @@ const AppContent: React.FC = () => {
       if (doc.exists()) {
         setUserData(doc.data());
       }
+    }, (error) => {
+       console.warn("User sync error:", error);
     });
 
     return () => unsubscribe();
@@ -97,7 +103,13 @@ const AppContent: React.FC = () => {
 
   const handleUpgradeSuccess = () => {
     if (user) {
-        updateDoc(doc(db, 'users', user.uid), { isPremium: true });
+        // Optimistic update if backend fails
+        setUserData((prev: any) => ({ ...prev, isPremium: true }));
+        try {
+            updateDoc(doc(db, 'users', user.uid), { isPremium: true });
+        } catch (e) {
+            console.error("Failed to update status on server", e);
+        }
     }
     setCurrentView('PROFILE');
   };
@@ -123,6 +135,11 @@ const AppContent: React.FC = () => {
     const userRef = doc(db, 'users', user.uid);
     const isLiked = likedAppIds.has(id);
     
+    // Optimistic UI update
+    const newLiked = new Set(likedAppIds);
+    if (isLiked) newLiked.delete(id); else newLiked.add(id);
+    setUserData((prev: any) => ({ ...prev, likedAppIds: Array.from(newLiked) }));
+
     try {
       await updateDoc(userRef, {
         likedAppIds: isLiked ? arrayRemove(id) : arrayUnion(id)
